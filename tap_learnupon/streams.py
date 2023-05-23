@@ -1,6 +1,9 @@
 """Stream class for tap-learnupon."""
 
 import logging
+import requests
+
+from typing import Optional, Any, Dict
 from singer_sdk import typing as th
 from singer_sdk.streams import RESTStream
 from singer_sdk.authenticators import BasicAuthenticator
@@ -32,6 +35,29 @@ class LearningPaths(TapLearnuponStream):
     path = "/learning_paths"  # API endpoint after base_url
     records_jsonpath = "$.learning_paths[0:]"  # https://jsonpath.com Use requests response json to identify the json path
     primary_keys = ["id"]
+
+    def get_next_page_token(
+        self, response: requests.Response, previous_token: Optional[Any]
+    ) -> Optional[Any]:
+        """Return a token for identifying next page or None if no more pages."""
+        has_next_page = response.headers.get("LU-Has-Next-Page", "false")
+        if has_next_page == "true":
+            current_page = response.headers.get("LU-Current-Page", 0)
+            next_page = current_page + 1
+            next_page_token = next_page
+            return next_page_token
+        else:
+            next_page_token = None
+            return next_page_token
+
+    def get_url_params(
+        self, context: Optional[dict], next_page_token: Optional[Any]
+    ) -> Dict[str, Any]:
+        """Return a dictionary of values to be used in URL parameterization."""
+        params: dict = {}
+        if next_page_token:
+            params["page"] = next_page_token
+        return params
 
     schema = th.PropertiesList(
         th.Property("id", th.IntegerType),
