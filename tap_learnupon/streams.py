@@ -36,29 +36,6 @@ class LearningPaths(TapLearnuponStream):
     records_jsonpath = "$.learning_paths[0:]"  # https://jsonpath.com Use requests response json to identify the json path
     primary_keys = ["id"]
 
-    def get_next_page_token(
-        self, response: requests.Response, previous_token: Optional[Any]
-    ) -> Optional[Any]:
-        """Return a token for identifying next page or None if no more pages."""
-        has_next_page = response.headers.get("LU-Has-Next-Page", "false")
-        if has_next_page == "true":
-            current_page = response.headers.get("LU-Current-Page", 0)
-            next_page = current_page + 1
-            next_page_token = next_page
-            return next_page_token
-        else:
-            next_page_token = None
-            return next_page_token
-
-    def get_url_params(
-        self, context: Optional[dict], next_page_token: Optional[Any]
-    ) -> Dict[str, Any]:
-        """Return a dictionary of values to be used in URL parameterization."""
-        params: dict = {}
-        if next_page_token:
-            params["page"] = next_page_token
-        return params
-
     schema = th.PropertiesList(
         th.Property("id", th.IntegerType),
         th.Property("name", th.StringType),
@@ -82,3 +59,26 @@ class LearningPaths(TapLearnuponStream):
         th.Property("date_published", th.DateTimeType),
         th.Property("due_date_after_enrollment", th.DateTimeType),
     ).to_dict()
+
+    def get_next_page_token(
+        self, response: requests.Response, previous_token: Optional[Any]
+    ) -> Optional[Any]:
+        """Return a token for identifying next page or None if no more pages."""
+        has_next_page = response.headers.get("LU-Has-Next-Page", "false")
+        if has_next_page == "true":
+            current_page = response.headers.get("LU-Current-Page", 0)
+            next_page = current_page + 1
+            next_page_token = next_page
+            return next_page_token
+        else:
+            next_page_token = None
+            return next_page_token
+
+    def get_url_params(
+        self, context: Optional[dict], next_page_token: Optional[Any]
+    ) -> Dict[str, Any]:
+        """Return a dictionary of values to be used in URL parameterization."""
+        params: dict = {}
+        if next_page_token:
+            params["page"] = next_page_token
+        return params

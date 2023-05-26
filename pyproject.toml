@@ -28,7 +28,7 @@ viztracer = "^0.15.4"
 [tool.isort]
 profile = "black"
 multi_line_output = 3 # Vertical Hanging Indent
-src_paths = "tap_template"
+src_paths = "tap_learnupon"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
