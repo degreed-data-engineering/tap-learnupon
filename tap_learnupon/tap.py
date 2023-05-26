@@ -4,11 +4,11 @@ from typing import List
 from singer_sdk import Tap, Stream
 from singer_sdk import typing as th
 
-from tap_learnupon.streams import LearningPaths, Courses
+from tap_learnupon.streams import LearningPaths, Courses, Modules
 
 PLUGIN_NAME = "tap-learnupon"
 
-STREAM_TYPES = [LearningPaths, Courses]
+STREAM_TYPES = [LearningPaths, Courses, Modules]
 
 
 class TapLearnupon(Tap):
