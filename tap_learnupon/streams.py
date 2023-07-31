@@ -3,11 +3,11 @@
 import logging
 import requests
 
-from typing import Optional, Any, Dict
+from typing import Optional, Any, Dict, Iterable
 from singer_sdk import typing as th
 from singer_sdk.streams import RESTStream
 from singer_sdk.authenticators import BasicAuthenticator
-
+import itertools
 
 logging.basicConfig(level=logging.INFO)
 
@@ -192,3 +192,141 @@ class Modules(TapLearnuponStream):
         th.Property("training_id", th.IntegerType),
         th.Property("session_id", th.IntegerType),
     ).to_dict()
+
+
+class UnifiedStream(TapLearnuponStream):
+    name = "unified"
+    primary_keys = ["id"]
+
+    schema = th.PropertiesList(
+        th.Property("id", th.IntegerType),
+        th.Property("name", th.StringType),
+        th.Property("version", th.StringType),
+        th.Property("source_id", th.IntegerType),
+        th.Property("created_at", th.DateTimeType),
+        th.Property("sellable", th.BooleanType),
+        th.Property("cataloged", th.BooleanType),
+        th.Property("date_published", th.DateTimeType),
+        th.Property("keywords", th.StringType),
+        th.Property("reference_code", th.StringType),
+        th.Property("manager_can_enroll", th.BooleanType),
+        th.Property("allow_users_rate_course", th.BooleanType),
+        th.Property("number_of_reviews", th.IntegerType),
+        th.Property("number_of_stars", th.IntegerType),
+        th.Property("minute_length", th.NumberType),
+        th.Property("course_length_unit", th.StringType),
+        th.Property("num_enrolled", th.IntegerType),
+        th.Property("num_not_started", th.IntegerType),
+        th.Property("num_in_progress", th.IntegerType),
+        th.Property("num_completed", th.IntegerType),
+        th.Property("num_passed", th.IntegerType),
+        th.Property("num_failed", th.IntegerType),
+        th.Property("num_pending_review", th.IntegerType),
+        th.Property("number_of_modules", th.IntegerType),
+        th.Property("price", th.IntegerType),
+        th.Property("published_status_id", th.StringType),
+        th.Property("difficulty_level", th.StringType),
+        th.Property("description_html", th.StringType),
+        th.Property("description_text", th.StringType),
+        th.Property("objectives_html", th.StringType),
+        th.Property("objectives_text", th.StringType),
+        th.Property("credits_to_be_awarded", th.StringType),
+        th.Property("due_days_after_enrollment", th.IntegerType),
+        th.Property("due_date_after_enrollment", th.DateTimeType),
+        th.Property("send_due_date_reminders", th.BooleanType),
+        th.Property("due_date_reminder_days", th.IntegerType),
+        th.Property("due_date_reminder_days_2", th.IntegerType),
+        th.Property("thumbnail_image_url", th.StringType),
+        th.Property("license_expires", th.DateTimeType),
+        th.Property("license_number_enrollments_purchased", th.IntegerType),
+        th.Property("license_is_open_ended", th.BooleanType),
+        th.Property("license_has_unlimited_enrollments", th.BooleanType),
+        th.Property("owner_first_name", th.StringType),
+        th.Property("owner_last_name", th.StringType),
+        th.Property("owner_email", th.StringType),
+        th.Property("owner_id", th.IntegerType),
+        th.Property("learning_awards", th.StringType),
+        th.Property("customDataFieldValues", th.StringType),
+        th.Property("stream", th.StringType),
+    ).to_dict()
+
+    def __init__(self, tap=None, **kwargs):
+        super().__init__(tap=tap, **kwargs)
+
+    def get_records(self, context: Optional[dict]) -> Iterable[dict]:
+        # Fetch records from the other streams
+        learning_paths = LearningPaths(tap=self._tap)
+        courses = Courses(tap=self._tap)
+        modules = Modules(tap=self._tap)
+
+        # Combine the records into a unified format
+        for stream, records in [('learning_paths', learning_paths.get_records(context)),
+                                ('courses', courses.get_records(context)),
+                                ('modules', modules.get_records(context))]:
+            for record in records:
+                yield self.transform_record(record, stream)
+
+
+    def transform_record(self, record: dict, stream: str) -> dict:
+        # Define the unified schema
+        unified_schema = {
+            "id": None,
+            "name": None,
+            "version": None,
+            "source_id": None,
+            "created_at": None,
+            "sellable": None,
+            "cataloged": None,
+            "date_published": None,
+            "keywords": None,
+            "reference_code": None,
+            "manager_can_enroll": None,
+            "allow_users_rate_course": None,
+            "number_of_reviews": None,
+            "number_of_stars": None,
+            "minute_length": None,
+            "course_length_unit": None,
+            "num_enrolled": None,
+            "num_not_started": None,
+            "num_in_progress": None,
+            "num_completed": None,
+            "num_passed": None,
+            "num_failed": None,
+            "num_pending_review": None,
+            "number_of_modules": None,
+            "price": None,
+            "published_status_id": None,
+            "difficulty_level": None,
+            "description_html": None,
+            "description_text": None,
+            "objectives_html": None,
+            "objectives_text": None,
+            "credits_to_be_awarded": None,
+            "due_days_after_enrollment": None,
+            "due_date_after_enrollment": None,
+            "send_due_date_reminders": None,
+            "due_date_reminder_days": None,
+            "due_date_reminder_days_2": None,
+            "thumbnail_image_url": None,
+            "license_expires": None,
+            "license_number_enrollments_purchased": None,
+            "license_is_open_ended": None,
+            "license_has_unlimited_enrollments": None,
+            "owner_first_name": None,
+            "owner_last_name": None,
+            "owner_email": None,
+            "owner_id": None,
+            "learning_awards": None,
+            "customDataFieldValues": None,
+            "stream": None
+        }
+
+        # Update the unified record with data from the original record
+        for key in record.keys():
+            if key in unified_schema:
+                unified_schema[key] = record[key]
+
+        # Indicate the source stream
+        unified_schema["stream"] = stream
+
+        return unified_schema
