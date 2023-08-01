@@ -164,20 +164,37 @@ class Modules(TapLearnuponStream):
         th.Property("component_type", th.StringType),
         th.Property("description_html", th.StringType),
         th.Property("description_text", th.StringType),
+        th.Property("creator_id", th.IntegerType),
+        th.Property("creator_first_name", th.StringType),
+        th.Property("creator_last_name", th.StringType),
+        th.Property("creator_email", th.StringType),
+        th.Property("creator_username", th.StringType),
         th.Property("assignment_passing_percentage", th.IntegerType),
         th.Property("assignment_question_html", th.StringType),
         th.Property("assignment_question_text", th.StringType),
+        th.Property("location_id", th.IntegerType),
+        th.Property("location", th.StringType),
+        th.Property("address_1", th.StringType),
+        th.Property("address_2", th.StringType),
+        th.Property("address_3", th.StringType),
+        th.Property("location_state_code", th.StringType),
+        th.Property("location_country_code", th.StringType),
         th.Property("start_at", th.DateTimeType),
         th.Property("end_at", th.DateTimeType),
         th.Property("timezone", th.StringType),
         th.Property("number_enrolled_on_session", th.IntegerType),
         th.Property("max_capacity", th.IntegerType),
+        th.Property("session_tutor_id", th.IntegerType),
+        th.Property("tutor_first_name", th.StringType),
+        th.Property("tutor_last_name", th.StringType),
+        th.Property("tutor_email", th.StringType),
+        th.Property("tutor_username", th.StringType),
         th.Property("training_id", th.IntegerType),
         th.Property("session_id", th.IntegerType),
     ).to_dict()
 
 
-class UnifiedStream(TapLearnuponStream):
+class Unified(TapLearnuponStream):
     name = "unified"
     primary_keys = ["id"]
 
