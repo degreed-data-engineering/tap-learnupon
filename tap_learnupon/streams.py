@@ -54,6 +54,7 @@ class TapLearnuponStream(RESTStream):
 
 
 class LearningPaths(TapLearnuponStream):
+    selected_by_default = False
     name = "learning_paths"  # Stream name
     path = "/learning_paths"  # API endpoint after base_url
     records_jsonpath = "$.learning_paths[0:]"  # https://jsonpath.com Use requests response json to identify the json path
@@ -85,6 +86,7 @@ class LearningPaths(TapLearnuponStream):
 
 
 class Courses(TapLearnuponStream):
+    selected_by_default = False
     name = "courses"  # Stream name
     path = "/courses"  # API endpoint after base_url
     records_jsonpath = "$.courses[0:]"  # https://jsonpath.com Use requests response json to identify the json path
@@ -147,6 +149,7 @@ class Courses(TapLearnuponStream):
 
 
 class Modules(TapLearnuponStream):
+    selected_by_default = False
     parent_stream_type = Courses
     name = "modules"  # Stream name
     path = "/modules?course_id={course_id}"  # API endpoint after base_url
@@ -195,6 +198,7 @@ class Modules(TapLearnuponStream):
 
 
 class Unified(TapLearnuponStream):
+    selected_by_default = True
     name = "unified"
     primary_keys = ["id"]
 
