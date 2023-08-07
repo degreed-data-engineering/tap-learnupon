@@ -3,11 +3,11 @@
 import logging
 import requests
 
-from typing import Optional, Any, Dict
+from typing import Optional, Any, Dict, Iterable
 from singer_sdk import typing as th
 from singer_sdk.streams import RESTStream
 from singer_sdk.authenticators import BasicAuthenticator
-
+import itertools
 
 logging.basicConfig(level=logging.INFO)
 
@@ -54,6 +54,7 @@ class TapLearnuponStream(RESTStream):
 
 
 class LearningPaths(TapLearnuponStream):
+    selected_by_default = False
     name = "learning_paths"  # Stream name
     path = "/learning_paths"  # API endpoint after base_url
     records_jsonpath = "$.learning_paths[0:]"  # https://jsonpath.com Use requests response json to identify the json path
@@ -85,6 +86,7 @@ class LearningPaths(TapLearnuponStream):
 
 
 class Courses(TapLearnuponStream):
+    selected_by_default = False
     name = "courses"  # Stream name
     path = "/courses"  # API endpoint after base_url
     records_jsonpath = "$.courses[0:]"  # https://jsonpath.com Use requests response json to identify the json path
@@ -147,6 +149,7 @@ class Courses(TapLearnuponStream):
 
 
 class Modules(TapLearnuponStream):
+    selected_by_default = False
     parent_stream_type = Courses
     name = "modules"  # Stream name
     path = "/modules?course_id={course_id}"  # API endpoint after base_url
@@ -192,3 +195,91 @@ class Modules(TapLearnuponStream):
         th.Property("training_id", th.IntegerType),
         th.Property("session_id", th.IntegerType),
     ).to_dict()
+
+
+class Unified(TapLearnuponStream):
+    selected_by_default = True
+    name = "unified"
+    primary_keys = ["id"]
+
+    schema = th.PropertiesList(
+        th.Property("id", th.IntegerType),
+        th.Property("name", th.StringType),
+        th.Property("version", th.StringType),
+        th.Property("source_id", th.IntegerType),
+        th.Property("created_at", th.DateTimeType),
+        th.Property("sellable", th.BooleanType),
+        th.Property("cataloged", th.BooleanType),
+        th.Property("date_published", th.DateTimeType),
+        th.Property("keywords", th.StringType),
+        th.Property("reference_code", th.StringType),
+        th.Property("course_length_unit", th.StringType),
+        th.Property("published_status_id", th.StringType),
+        th.Property("difficulty_level", th.StringType),
+        th.Property("description_html", th.StringType),
+        th.Property("description_text", th.StringType),
+        th.Property("objectives_html", th.StringType),
+        th.Property("objectives_text", th.StringType),
+        th.Property("credits_to_be_awarded", th.StringType),
+        th.Property("thumbnail_image_url", th.StringType),
+        th.Property("learning_awards", th.StringType),
+        th.Property("customDataFieldValues", th.StringType),
+        th.Property("stream", th.StringType),
+    ).to_dict()
+
+    def __init__(self, tap=None, **kwargs):
+        super().__init__(tap=tap, **kwargs)
+
+    def get_records(self, context: Optional[dict]) -> Iterable[dict]:
+        # Fetch records from the other streams
+        learning_paths = LearningPaths(tap=self._tap)
+        courses = Courses(tap=self._tap)
+        modules = Modules(tap=self._tap)
+
+        # Combine the records into a unified format
+        for stream, records in [('learning_paths', learning_paths.get_records(context)),
+                                ('courses', courses.get_records(context)),
+                                ('modules', modules.get_records(context))]:
+            for record in records:
+                yield self.transform_record(record, stream)
+
+
+    def transform_record(self, record: dict, stream: str) -> dict:
+        # Define the unified schema
+        unified_schema = {
+            "id": None,
+            "name": None,
+            "version": None,
+            "source_id": None,
+            "created_at": None,
+            "sellable": None,
+            "cataloged": None,
+            "date_published": None,
+            "keywords": None,
+            "reference_code": None,
+            "minute_length": None,
+            "course_length_unit": None,
+            "num_pending_review": None,
+            "number_of_modules": None,
+            "published_status_id": None,
+            "difficulty_level": None,
+            "description_html": None,
+            "description_text": None,
+            "objectives_html": None,
+            "objectives_text": None,
+            "credits_to_be_awarded": None,
+            "thumbnail_image_url": None,
+            "learning_awards": None,
+            "customDataFieldValues": None,
+            "stream": None
+        }
+
+        # Update the unified record with data from the original record
+        for key in record.keys():
+            if key in unified_schema:
+                unified_schema[key] = record[key]
+
+        # Indicate the source stream
+        unified_schema["stream"] = stream
+
+        return unified_schema
