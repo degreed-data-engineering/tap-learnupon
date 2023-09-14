@@ -22,6 +22,12 @@ class TapLearnupon(Tap):
             required=True,
             description="Url base for the source endpoint",
         ),
+        th.Property(
+            "domain",
+            th.StringType,
+            required=True,
+            description="Domain for the source endpoint",
+        ),
         th.Property("username", th.StringType, required=True, description="Username"),
         th.Property("password", th.StringType, required=True, description="Password"),
     ).to_dict()

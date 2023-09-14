@@ -18,7 +18,7 @@ class TapLearnuponStream(RESTStream):
     @property
     def url_base(self) -> str:
         """Base URL of source"""
-        return self.config["url_base"]
+        return f"https://{self.config.get('domain')}.{self.config.get('url_base')}/api/v1"
 
     @property
     def authenticator(self) -> BasicAuthenticator:
